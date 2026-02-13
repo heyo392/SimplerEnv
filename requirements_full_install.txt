@@ -1,4 +1,4 @@
-numpy<2.0
+numpy==1.26.4
 # tensorflow[and-cuda]
 tensorflow_datasets==4.9.4
 tensorflow_hub==0.16.0

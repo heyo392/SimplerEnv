@@ -3,8 +3,8 @@ import os
 from pathlib import Path
 from typing import List, Tuple
 
+import imageio.v2 as imageio
 from matplotlib import pyplot as plt
-import mediapy as media
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from scipy.ndimage import binary_dilation
@@ -17,15 +17,27 @@ _palette = [0, 0, 0] + _palette
 
 
 def write_video(path, images, fps=5):
-    # images: list of numpy arrays
+    # images: list of numpy arrays (or PIL/tensor-like frames)
+    if not images:
+        raise ValueError("write_video received no frames")
+
     root_dir = Path(path).parent
     if not os.path.exists(root_dir):
         os.makedirs(root_dir)
-    if not isinstance(images[0], np.ndarray):
-        images_npy = [image.numpy() for image in images]
-    else:
-        images_npy = images
-    media.write_video(path, images_npy, fps=fps)
+
+    images_npy = []
+    for image in images:
+        if isinstance(image, np.ndarray):
+            frame = image
+        elif hasattr(image, "numpy"):
+            frame = image.numpy()
+        else:
+            frame = np.asarray(image)
+        images_npy.append(np.asarray(frame, dtype=np.uint8))
+
+    with imageio.get_writer(path, fps=fps) as writer:
+        for frame in images_npy:
+            writer.append_data(frame)
 
 
 def plot_pred_and_gt_action_trajectory(predicted_actions, gt_actions, stacked_images):
